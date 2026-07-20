@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")   // Supabase connection pooler (port 6543)
+  directUrl = env("DIRECT_URL")     // Supabase direct connection (port 5432) — used by prisma migrate
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("user")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  urls      Url[]
+
+  @@map("users")
+}
+
+model Url {
+  id             String      @id @default(uuid())
+  userId         String?
+  originalUrl    String
+  shortCode      String      @unique
+  customAlias    String?     @unique
+  title          String?
+  tags           String[]    @default([])
+  expirationDate DateTime?
+  clickCount     Int         @default(0)
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  analytics      Analytics[]
+
+  @@index([shortCode])
+  @@index([customAlias])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([expirationDate])
+  @@map("urls")
+}
+
+model Analytics {
+  id        String   @id @default(uuid())
+  urlId     String
+  ipAddress String?
+  browser   String?
+  os        String?
+  device    String?
+  country   String?
+  referrer  String?
+  timestamp DateTime @default(now())
+  url       Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
+
+  @@index([urlId])
+  @@index([timestamp])
+  @@map("analytics")
+}
